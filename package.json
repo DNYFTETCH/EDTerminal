@@ -1,0 +1,38 @@
+{
+  "name": "edterminal",
+  "version": "1.0.0",
+  "description": "EDTerminal - Enhanced Developer Terminal Utility",
+  "bin": {
+    "ed": "./bin/ed",
+    "edterminal": "./bin/ed"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "terminal",
+    "cli",
+    "developer-tools",
+    "productivity"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.0.0",
+    "chalk": "^4.1.2",
+    "inquirer": "^8.2.5",
+    "ora": "^5.4.1",
+    "figlet": "^1.6.0",
+    "boxen": "^5.1.2",
+    "cli-table3": "^0.6.3",
+    "axios": "^1.5.0",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "preferGlobal": true
+}
