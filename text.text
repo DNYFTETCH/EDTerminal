@@ -1,0 +1,229 @@
+Below is a **single-file demo AI tool** (backend + minimal frontend) that:
+
+* Accepts a module description
+* Uses OpenAI to generate module code
+* Automatically creates a new repository on **GitHub** or **GitLab**
+* Pushes the generated module into the repo
+
+You only need:
+
+* `OPENAI_API_KEY`
+* `GITHUB_TOKEN` or `GITLAB_TOKEN`
+
+---
+
+### 🚀 Features
+
+* AI code generation
+* Auto repo creation
+* Auto commit + push
+* Works with both GitHub & GitLab
+* One single file
+
+---
+
+## ✅ Single File: `ai-module-generator.js`
+
+```javascript
+/**
+ * AI Module Generator
+ * Auto-creates a module and pushes it to GitHub or GitLab
+ *
+ * Required ENV:
+ * OPENAI_API_KEY
+ * GITHUB_TOKEN (for GitHub)
+ * GITLAB_TOKEN (for GitLab)
+ */
+
+import express from "express";
+import axios from "axios";
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import OpenAI from "openai";
+
+const app = express();
+app.use(express.json());
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// === CONFIG ===
+const PORT = 3000;
+const TEMP_DIR = "./temp_modules";
+
+// Ensure temp directory exists
+if (!fs.existsSync(TEMP_DIR)) {
+  fs.mkdirSync(TEMP_DIR);
+}
+
+// ==========================
+// AI Code Generator
+// ==========================
+async function generateModuleCode(description) {
+  const prompt = `
+  Create a clean, production-ready JavaScript module.
+  Description: ${description}
+  Include:
+  - index.js
+  - package.json
+  - README.md
+  `;
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  return response.choices[0].message.content;
+}
+
+// ==========================
+// GitHub Repo Creator
+// ==========================
+async function createGitHubRepo(repoName) {
+  const res = await axios.post(
+    "https://api.github.com/user/repos",
+    { name: repoName, private: false },
+    {
+      headers: {
+        Authorization: `token ${process.env.GITHUB_TOKEN}`,
+      },
+    }
+  );
+  return res.data.clone_url;
+}
+
+// ==========================
+// GitLab Repo Creator
+// ==========================
+async function createGitLabRepo(repoName) {
+  const res = await axios.post(
+    "https://gitlab.com/api/v4/projects",
+    { name: repoName, visibility: "public" },
+    {
+      headers: {
+        "PRIVATE-TOKEN": process.env.GITLAB_TOKEN,
+      },
+    }
+  );
+  return res.data.http_url_to_repo;
+}
+
+// ==========================
+// Git Push
+// ==========================
+function pushToRepo(repoUrl, folderPath) {
+  execSync(`git init`, { cwd: folderPath });
+  execSync(`git add .`, { cwd: folderPath });
+  execSync(`git commit -m "Initial AI module commit"`, { cwd: folderPath });
+  execSync(`git branch -M main`, { cwd: folderPath });
+  execSync(`git remote add origin ${repoUrl}`, { cwd: folderPath });
+  execSync(`git push -u origin main`, { cwd: folderPath });
+}
+
+// ==========================
+// MAIN API ENDPOINT
+// ==========================
+app.post("/generate", async (req, res) => {
+  try {
+    const { description, platform, repoName } = req.body;
+
+    if (!description || !platform || !repoName) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const moduleCode = await generateModuleCode(description);
+
+    const modulePath = path.join(TEMP_DIR, repoName);
+
+    if (!fs.existsSync(modulePath)) {
+      fs.mkdirSync(modulePath);
+    }
+
+    // Save AI output as files (simple parsing)
+    fs.writeFileSync(path.join(modulePath, "index.js"), moduleCode);
+    fs.writeFileSync(path.join(modulePath, "README.md"), "# AI Generated Module");
+
+    let repoUrl;
+
+    if (platform === "github") {
+      repoUrl = await createGitHubRepo(repoName);
+    } else if (platform === "gitlab") {
+      repoUrl = await createGitLabRepo(repoName);
+    } else {
+      return res.status(400).json({ error: "Invalid platform" });
+    }
+
+    pushToRepo(repoUrl, modulePath);
+
+    res.json({
+      success: true,
+      repository: repoUrl,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
+
+// ==========================
+// Minimal Frontend
+// ==========================
+app.get("/", (req, res) => {
+  res.send(`
+    <h2>AI Module Generator</h2>
+    <form method="POST" action="/generate">
+      <input name="repoName" placeholder="Repo Name"/><br/><br/>
+      <textarea name="description" placeholder="Describe your module"></textarea><br/><br/>
+      <select name="platform">
+        <option value="github">GitHub</option>
+        <option value="gitlab">GitLab</option>
+      </select><br/><br/>
+      <button type="submit">Generate</button>
+    </form>
+  `);
+});
+
+app.listen(PORT, () => {
+  console.log("AI Module Generator running on http://localhost:3000");
+});
+```
+
+---
+
+## 🛠 How To Run
+
+```bash
+npm init -y
+npm install express axios openai
+node ai-module-generator.js
+```
+
+Set environment variables:
+
+```bash
+export OPENAI_API_KEY=your_key
+export GITHUB_TOKEN=your_token
+export GITLAB_TOKEN=your_token
+```
+
+---
+
+## 🔥 What This Tool Does
+
+1. User describes a module
+2. AI generates module code
+3. Repo is created automatically
+4. Code is pushed instantly
+5. Repo link is returned
+
+---
+
+If you'd like, I can now:
+
+* Upgrade this into a **full SaaS product architecture**
+* Add **multi-file structured generation**
+* Convert it into a **Dockerized production system**
+* Or build a **GUI desktop AI dev tool**
