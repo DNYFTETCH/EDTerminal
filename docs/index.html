@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EdTerminal</title>
+  <style>
+    body { background: black; color: lime; font-family: monospace; }
+    #terminal { padding: 10px; }
+  </style>
+</head>
+<body>
+  <div id="terminal">Welcome to EdTerminal! Type 'help'...</div>
+  <script>
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        document.getElementById("terminal").innerHTML += "<br>> Command executed!";
+      }
+    });
+  </script>
+</body>
+</html>
